@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>welcome.</title>
+	</head>
+	<body style="font-family: monospace;">
+		<p>
+		<a href="#intro">[intro]</a>
+		<a href="#fun">[fun stuff]</a>
+		<a href="#resume">[resume]</a>
+		<a href="#contact">[contact]</a>
+		</p>
+		<p id="intro">
+		hello, welcome to the webpage of michael coates.<br>
+		</p>
+		<hr>
+		<p id="fun">
+		<a href="https://osard.jp">OS ARD SYSTEMS</a><br>
+		<ul style="list-style-type: none;">
+			<li>Automotive aesthetic for cars I've modified myself. All work completed by me with numerous one-off parts to create uniqueness. I'm very inspired by mid-late 90s and early 00s computing design with specific color contrast plus direct and accessible style. The simplicity lends itself to my extreme car productions. These are more of an art form than a driver's car.
+			</li>
+		</ul>
+		<a href="#">Boston Storm Dragon Boat</a>
+		<ul style="list-style-type: none;">
+			<li>
+				Competitive paddler for Boston Storm team taking part in races across the east coast USA. Member of IDBF and competed in 2022 Club Crew World Championship. The team is more than just a boat in a race so I assist in strength coaching and culture building activities. Check out our Instagram page for media content: <a href="https://www.instagram.com/bostonstorm_db/">Boston Storm Dragon Boat</a>
+			</li>
+		</ul>
+		<a href="https://github.com/outerwear">Personal Github</a>
+		<ul style="list-style-type: none;">
+		<li>
+			Random repos of programming I have done outside of work. Fun little data structure implementations in C like a memory optimized XOR linked list or some self teaching of Rust through implementing an ELF reader.
+		</li>
+		</ul>
+		</p>
+		<hr>
+		<p id="resume">
+		Hyannis Port Research - Principal Software Engineer        [Oct. 2023 - present]<br>
+		<ul>
+			<li>
+				Technical lead, mentor, project manager, and individual contributor to ultra low latency multi-threaded and multi-process software portfolio of HPR.
+			</li>
+			<li>
+				Designed and implemented an off-core lock-free multi-producer single-consumer logging module for high throughput logging without impacting main datapath performance.
+			</li>
+			<li>
+				Created production runtime performance tracer for applications by inserting special probes defined in a registry that generates timings of function entry/exit and off-core logs the data.
+				This is used to find bottlenecks in production and reduce high latency events for pre-trade risk analysis.
+			</li>
+			<li>
+				Managed global infrastructure fleet, guiding engineers to generate better processes and automation for secure co-located exchange deployments.
+			</li>
+			<li>
+				Implemented an application start-up memory allocator to remove all runtime dynamic allocations using memory maps and an easy to use developer API.
+			</li>
+			<li>
+				Developed a runtime ELF binary re-map to hugepages increasing performance by 20% and significantly reducing both data and instruction cache misses.
+			</li>
+			<li>
+				Built custom linker scripts for specific organization and alignment of data and text in ELF binaries for tighter datapaths increasing performance at scale.
+			</li>
+			<li>
+				Created advanced data structures in C and x86 SIMD such as Adaptive Radix Tree that improved throughput consistency and doubled overall performance.
+			</li>
+			<li>
+				Mentored and pair programmed with junior engineer to implement a reverse stack walker for fault handling in emergency scenarios without core files (such as smashed stack).
+				This was done in C and x86 assembly and proved useful during a production outage where coredump was unavailable, but using this tool we got register dump, ELF offsets of the stack
+				and a stack memory dump of the POSIX thread which failed and ultimately could determine root cause.
+			</li>
+			<li>
+				Improved application architecture by moving from a single process to splitting out non-critical services off the main data path and into separate process space so in event of
+				failure clients can still access orders in the stock exchange without risk.
+			</li>
+			<li>
+				Analyzed customer experience by designing and creating a stock market simulator in C++ and C. I led the design and mentored 2 junior engineers to aide in implementation which first
+				phase supporting NASDAQ OUCH was complete in a couple weeks allowing us to test prod-like configurations and ultimately finding many bugs with this environment of our products.
+			</li>
+			<li>
+				Worked on custom order sender for internal testing to understand customer usage with QuickFIX library
+			</li>
+			<li>
+				Set up the company's first Grafana dashboards tracking historical median latency, throughput, test failures, flamegraphs, and more for weekly dashboard review meetings
+			</li>
+			<li>
+				Lead designer of asynchronous price collar calculations for broker trade risk management by analyzing market data feeds and applying to the fleet
+			</li>
+			<li>
+				Led internal teaching sessions of linux IPC, optimization techniques, linux tools (gdb, valgrind, etc), and data structures for expanding ideas to create better performing features
+			</li>
+			<li>
+				Deep dive into Xilinx Solarflare FPGA network cards for network stack offload out of kernel
+			</li>
+			<li>
+				Created yearly product roadmap to drive recruitment, product improvement, and understand industry needs. This kept employees motivated by getting opportunity to work on fun, high-performance
+				features.
+			</li>
+			<li>
+				Standardized interview process by designating roles for the interviewers and assigning behavioral and technical categories. This revolutionized hiring at HPR and went from difficulty recruiting
+				to better understanding what was desired in candidates and resulting in hiring more.
+			</li>
+		</ul>
+		<br>
+		Amazon Web Services - EC2 Nitro VPC - Software Engineer    [Nov. 2021 - Oct. 2023]<br>
+		<ul>
+			<li>
+				Developer on the packet pipeline on Nitro ARM hardware writing kernel and userspace code in C and lua
+			</li>
+			<li>
+				Contributor to open-source Scapy implementing dhcp option for classless static routes: <a href="https://github.com/secdev/scapy/pull/3536">scapy #3536</a>
+			</li>
+			<li>
+				Implemented static route and dhcp option vending on ipv6-only subnets
+			</li>
+			<li>
+				VPC firewall API integration for service level ownership
+			</li>
+			<li>
+				Nitro hardware interactivity remote tool development for operations and testing using CoAP
+			</li>
+			<li>
+				Solved scaling issues on Nitro devices which prevented conntrack and statistic generation.
+			</li>
+			<li>
+				Syscall implementation for memory protection on Nitro kernels
+			</li>
+			<li>
+				Developed memory management kernel code for ARM based systems
+			</li>
+			<li>
+				Lead OS security projects to redact sensitive customer information from outside exposure through core files, memory leaks, and packet integrity
+			</li>
+			<li>
+				Worked on alarm and monitor generation for production memory leak detection alongside remediation
+				runbooks.
+			</li>
+			<li>
+				Created dashboards and alarms to monitor pre-production and production infrastructure. Along with that came
+				automated resolutions to reduce human operator workload.
+			</li>
+			<li>
+				Expanded unit and regression testing for new feature inclusion and fill gaps discovered from issues.
+				Frameworks were built with Behave testing and internal systems.
+			</li>
+			<li>
+				Used GDB to debug coredumps and perform root cause analysis. Also mentored junior employees and taught
+				how to use linux debugging tools for C applications
+			</li>
+		</ul>
+		<br>
+		eero - Connectivity and Systems - Software Engineer        [Nov. 2020 - Nov. 2021]<br>
+		<ul>
+			<li>
+				On connectivity team I built all things eero OS and device connection related using C, python, and golang
+			</li>
+			<li>
+				Wrote bluetooth low energy device server/client using vendor provided docs for eero setup with mobile app
+			</li>
+			<li>
+				HomeKit on eero development using Apple C libraries interfacing with eero network management
+			</li>
+			<li>
+				NSS hardware offload and in-house speed in C for newest eero generations
+			</li>
+			<li>
+				Simplified the physical testing architecture by implementing smart switches to control gateway WAN and LAN connections amongst the internal testing hardware
+			</li>
+			<li>
+				Automated smart switch configuration deployment during initial setup
+			</li>
+			<li>
+				Fixed long standing dhcp caching errors
+			</li>
+			<li>
+				Contributed to B2B product strategy and design such as captive portal and Hotspot 2.0
+			</li>
+		</ul>
+		<br>
+		Amazon Web Services - Aurora PostgreSQL - Software Engineer [Jan. 2018 - Nov. 2021]<br>
+		<ul>
+			<li>
+				Led Aurora PostgreSQL 3.0 release with full development of engine improvements plus feature parity with open source PostgreSQL 11, coordinated cross-functionally with different AWS teams for full end-to-end release process from AWS console to storage teams, hosted weekly sync meetings to ensure deadlines were met and issues were resolved. This resulted in delivering a more stable release than prior versions
+			</li>
+			<li>
+				Sequence regression fix through storage page surgery from database import
+			</li>
+			<li>
+				Made Aurora storage integrations for new open source log records
+			</li>
+			<li>
+				Designed fast temporary table for enterprise scale workloads design
+			</li>
+			<li>
+				Led the subteam focused on Aurora read replicas: duties included sprint planning and road-mapping, design reviews, feature proposals, development, as well as mentoring team members.
+			</li>
+			<li>
+				Read replica instance durability design with logical restarting of nodes to prevent connection loss
+			</li>
+			<li>
+				Developed Aurora Query Plan Management code to aid customer query planning, caching, and execution
+			</li>
+			<li>
+				Dove deep into bugs in the codebase primarily using GDB to do debugging across a multi-process and multi-threaded application
+			</li>
+			<li>
+				Led internal PostgreSQL merge project to maintain parity with open-source releases and ensure compatibility without feature loss
+			</li>
+			<li>
+				Interfaced with internal and external customers to allow for better support and feature request development; led customers through investigations of Aurora database design to discover needs from given workloads.
+			</li>
+			<li>
+				Operational leader for on-call duties of the team. Provided on-boarding, training, documentation, and schedule creation. As the service grew in customers and usage globally it was important to structure on-call in a way that provided healthy balance for engineers while keeping high standards for issue resolution
+			</li>
+			<li>
+				Due to internal architecture changes, redesigned Aurora virtual functions and wrote the software to support new customer facing PostgreSQL functions providing better data of the cluster
+			</li>
+			<li>
+				Streamlined operational work by introducing automation for metrics gathering and SOP execution
+			</li>
+		</ul>
+		<br>
+		Wayfair - Caching and Infrastructure - Software Engineer   [May 2016 - Dec. 2017]<br>
+		<ul>
+			<li>
+			Led caching and database infrastructure engineering team focusing on memcached and Redis.
+			</li>
+			<li>
+			Provided road maps for feature development, code reviews, bug fixes across organizations, and primarily worked in C to create fast and scalable applications
+			</li>
+			<li>
+				Built fast Redis key analysis in C for monitoring usage, obsolete data, and trends for other teams to ensure features introducing more data would be applicable. Tool was open-sourced on Wayfair public github: <a href="https://github.com/wayfair/cream">wayfair/cream</a>
+			</li>
+			<li>
+			Used cron to schedule key analysis and graph in Grafana and Data Dog for operational investigation to discover trends, long term bugs in key usage, and provide cross-org project design guidance when using key value data stores
+			</li>
+			<li>
+			Added new twemproxy (an open-source proxy for memcached and Redis) features in C along with consistent hashing for better production failover resilience
+			</li>
+			<li>
+			Contributed to release engineering team automation and ops work
+			</li>
+			<li>
+			Performed operational tasks to stand up and architect cache clusters for internal clients with Puppet and Fabric
+			</li>
+			<li>
+			Using docker, scripted and containerized a number of infrastructure services such as RPM build/deploy, PHP integration tests, and gitlab-ci pipeline builds and deployments
+			</li>
+		</ul>
+		<br>
+		JP Morgan Chase - Paymentech VOS - Software Engineer       [Jun. 2012 - May 2016]<br>
+		<ul>
+			<li>
+			Payment acquiring developer on Stratus VOS system with HP Tandem interactivity processing billions of transactions a year and growing all written in C
+			</li>
+			<li>
+			XML to 120-byte Chase batch transaction converter designed using prefix tree for fast processing
+			</li>
+			<li>
+			Networking and payment transaction processing scripts written in Perl and KIX32 on Stratus VOS and Windows platforms
+			</li>
+			<li>
+			Reverse engineered Windows legacy applications for vendor acquiring to create in-house JPMC versions to scale with modern workloads on VOS
+			</li>
+		</ul>
+		<br>
+		</p>
+		<p id="contact">
+		<hr>
+		e-mail: <a href="/cdn-cgi/l/email-protection#9ff2f6fcf7fefaf3fcf0feebfaecdfefedf0ebf0f1f2fef6f3b1fcf0f2"><span class="__cf_email__" data-cfemail="1d70747e757c78717e727c69786e5d6d6f72697273707c7471337e7270">[email&#160;protected]</span></a><br>
+		</p>
+	<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>
