@@ -3,18 +3,33 @@
 	<head>
 		<title>welcome.</title>
 	</head>
-	<body style="font-family: monospace;">
+	<body style="font-family: monospace;background-color: #000000; color: #FFFFFF" link='green' vlink='green' alink='green'>
 		<p>
-		<a href="#intro">[intro]</a>
-		<a href="#fun">[fun stuff]</a>
+		<a href="#">[home]</a>
+		<a href="#fun">[sandbox]</a>
 		<a href="#resume">[resume]</a>
 		<a href="#contact">[contact]</a>
 		</p>
+		<hr>
 		<p id="intro">
-		hello, welcome to the webpage of michael coates.<br>
+		Hello, my name is Michael and I'm a C programmer with a fascination for all things high performance, low-latency, operating systems, kernels, databases, and more.
+        Here you will find a random assortment of stuff I want to share with no rhyme or reason. Some of it related to programming, some not.
+        <br>
 		</p>
 		<hr>
 		<p id="fun">
+        <a href="binaryremap.html">Free performance with huge pages</a><br>
+		<ul style="list-style-type: none;">
+            <li>
+                Imagine reducing cache misses and table walks without changing a line of code? Linux is somewhat stuck
+                in the past and still using 4K page sizes but supports up to 1GB. You got all that ram, your CPU cache
+                is growing with each generation, so let's make use of that and see some scaled performance benefits.
+            </li>
+        </ul>
+        <a href="whatismain.html">How do we know to start at main?</a><br>
+		<ul style="list-style-type: none;">
+            <li>C always starts at main, right? How do we actually get there? What if there isn't a main?</li>
+        </ul>
 		<a href="https://osard.jp">OS ARD SYSTEMS</a><br>
 		<ul style="list-style-type: none;">
 			<li>Automotive aesthetic for cars I've modified myself. All work completed by me with numerous one-off parts to create uniqueness. I'm very inspired by mid-late 90s and early 00s computing design with specific color contrast plus direct and accessible style. The simplicity lends itself to my extreme car productions. These are more of an art form than a driver's car.
@@ -36,7 +51,7 @@
 		<hr>
 		<p id="resume">
 		Hyannis Port Research - Principal Software Engineer        [Oct. 2023 - present]<br>
-		<ul>
+		<ul style="list-style-type: square;">
 			<li>
 				Technical lead, mentor, project manager, and individual contributor to ultra low latency multi-threaded and multi-process software portfolio of HPR.
 			</li>
@@ -98,10 +113,13 @@
 				Standardized interview process by designating roles for the interviewers and assigning behavioral and technical categories. This revolutionized hiring at HPR and went from difficulty recruiting
 				to better understanding what was desired in candidates and resulting in hiring more.
 			</li>
+            <li>
+                Used Xilinx Solarflare with OpenOnload for userspace RDMA networking. Explored XDP and ebpf for further fine tuning of network stack, packetization, and kernel bypass.
+            </li>
 		</ul>
 		<br>
 		Amazon Web Services - EC2 Nitro VPC - Software Engineer    [Nov. 2021 - Oct. 2023]<br>
-		<ul>
+		<ul style="list-style-type: square;">
 			<li>
 				Developer on the packet pipeline on Nitro ARM hardware writing kernel and userspace code in C and lua
 			</li>
@@ -148,7 +166,7 @@
 		</ul>
 		<br>
 		eero - Connectivity and Systems - Software Engineer        [Nov. 2020 - Nov. 2021]<br>
-		<ul>
+		<ul style="list-style-type: square;">
 			<li>
 				On connectivity team I built all things eero OS and device connection related using C, python, and golang
 			</li>
@@ -176,7 +194,7 @@
 		</ul>
 		<br>
 		Amazon Web Services - Aurora PostgreSQL - Software Engineer [Jan. 2018 - Nov. 2021]<br>
-		<ul>
+		<ul style="list-style-type: square;">
 			<li>
 				Led Aurora PostgreSQL 3.0 release with full development of engine improvements plus feature parity with open source PostgreSQL 11, coordinated cross-functionally with different AWS teams for full end-to-end release process from AWS console to storage teams, hosted weekly sync meetings to ensure deadlines were met and issues were resolved. This resulted in delivering a more stable release than prior versions
 			</li>
@@ -219,7 +237,7 @@
 		</ul>
 		<br>
 		Wayfair - Caching and Infrastructure - Software Engineer   [May 2016 - Dec. 2017]<br>
-		<ul>
+		<ul style="list-style-type: square;">
 			<li>
 			Led caching and database infrastructure engineering team focusing on memcached and Redis.
 			</li>
@@ -247,7 +265,7 @@
 		</ul>
 		<br>
 		JP Morgan Chase - Paymentech VOS - Software Engineer       [Jun. 2012 - May 2016]<br>
-		<ul>
+		<ul style="list-style-type: square;">
 			<li>
 			Payment acquiring developer on Stratus VOS system with HP Tandem interactivity processing billions of transactions a year and growing all written in C
 			</li>

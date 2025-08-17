@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>getting to main.</title>
+<style>
+pre {
+    border: 2px solid green;
+}
+</style>
+	</head>
+	<body style="font-family: monospace;background-color: #000000; color: #FFFFFF" link='green' vlink='green' alink='green'>
+		<p>
+		<a href="index.html">[home]</a>
+		<a href="index.html/#fun">[sandbox]</a>
+		<a href="#resume">[resume]</a>
+		<a href="#contact">[contact]</a>
+		</p>
+		<hr>
+        <p id="blog">
+        We take for granted the critical texts that start our applications. When first learning a "Hello, World!" program, especially in a language like C, it is kind of magic
+        that after a successful compilation we can do our simple ./a.out and it just works. Most engineers, developers, or curious folk at some point wonder how. A quick internet
+        search usually points to some assmebler output and is met with a quick close of that tab only to accept "it just works". Step by step lets try to find some of the how.
+        <br>
+        <h1>hello, world</h1>
+        This adventure is going to be done in C, on 64-bit Linux, and assumes you have a little bit of prior knowledge to programming. I wouldn't recommend this as a first
+        place to start learning to code. That said, the material isn't terribly difficult. Let's start with our hello world program:
+        <pre>
+        <code>
+    #include &#60;stdio.h&#62;
+    int main (int argc, char *argv[])
+    {
+        printf("hello, world\n");
+        return 0;
+    }
+        </code></pre>
+        Simple enough. We can compile it like so:
+        <pre>
+        <code>
+    gcc -o hello hello.c
+        </code></pre>
+        And when we execute the hello binary, we get our wonderful "hello, world" to screen with a newline. But why is this so large? Sifting through 16K isn't going to make finding main invocation all that easy.
+        <pre>
+        <code>
+    $ wc -c hello
+    15960 hello
+        </code></pre>
+        This is all because to get to main we need to go through what's called the C Runtime. I know, it is a compiled language so why does it have a "runtime"? It isn't quite the same as an interpreted language runtime.
+        <h1>crt0/crt1 and _start</h1>
+        The C runtime, named crt0 or crt1, is part of our libc. It is linked against our object when compiling automatically and provides some of the basics before we enter main. These basics are things like
+        allocating memory for your binary to be loaded and executed or setting up some of the variables passed into main (did you know main technically can take 3 parameters?). Your arg count and arg vector are
+        organized and passed into main in a standardized way that works with your architecture, such as aligning memory offsets. Being a standard it supports many architectures and so looking at the source code
+        can be jarring as it contains lots of conditionals based on your system. Peeling back the layers and skipping over the memory mapping of the ELF sections let's dive into how we actually call main.
+        <br><br>
+        An easy-ish way to see the call stack before main is objdump our binary. I won't put all of the output here, but just the primary pieces we are concerned about.
+        <pre>
+        <code>
+    $ objdump -d -Mintel hello
+    0000000000001060 &#60;_start&#62;:                                                                                             
+        1060:       f3 0f 1e fa             endbr64
+        1064:       31 ed                   xor    ebp,ebp
+        1066:       49 89 d1                mov    r9,rdx
+        1069:       5e                      pop    rsi
+        106a:       48 89 e2                mov    rdx,rsp
+        106d:       48 83 e4 f0             and    rsp,0xfffffffffffffff0
+        1071:       50                      push   rax
+        1072:       54                      push   rsp
+        1073:       45 31 c0                xor    r8d,r8d
+        1076:       31 c9                   xor    ecx,ecx
+        1078:       48 8d 3d ca 00 00 00    lea    rdi,[rip+0xca]          # 1149 &#60;main&#62;
+        107f:       ff 15 53 2f 00 00       call   QWORD PTR [rip+0x2f53]  # 3fd8 <__libc_start_main@GLIBC_2.34>     
+        1085:       f4                      hlt 
+        1086:       66 2e 0f 1f 84 00 00    cs nop WORD PTR [rax+rax*1+0x0]
+        108d:       00 00 00
+    
+    0000000000001149 &#60;main&#62;:
+        1149:       f3 0f 1e fa             endbr64
+        114d:       55                      push   rbp
+        114e:       48 89 e5                mov    rbp,rsp
+        1151:       48 83 ec 10             sub    rsp,0x10
+        1155:       89 7d fc                mov    DWORD PTR [rbp-0x4],edi
+        1158:       48 89 75 f0             mov    QWORD PTR [rbp-0x10],rsi
+        115c:       48 8d 05 a1 0e 00 00    lea    rax,[rip+0xea1]        # 2004 <_IO_stdin_used+0x4>
+        1163:       48 89 c7                mov    rdi,rax
+        1166:       e8 e5 fe ff ff          call   1050 &#60;puts@plt&#62;
+        116b:       b8 00 00 00 00          mov    eax,0x0
+        1170:       c9                      leave
+        1171:       c3                      ret
+    
+    0000000000001174 &#60;_fini&#62;:
+        1174:       f3 0f 1e fa             endbr64
+        1178:       48 83 ec 08             sub    rsp,0x8
+        117c:       48 83 c4 08             add    rsp,0x8
+        1180:       c3                      ret
+        </code></pre>
+        The above is two disassembled functions that live inside our compiled binary: _start and main. We wrote main so that is obvious why it is there, and the keen eye
+        may also see that printf() got optimized by the compiler to puts() since we had no formatters to expand. You don't need to be an expert in assembly here; take a look
+        in _start at offset 1078. There is a load-effective-address into register %rdi that contains the address of our main function. Immediately after is a call to a function
+        in libc named __libc_start_main. The assembly operations before this are setting up our argc and argv as well. That __libc_start_main is specific to glibc (as we used gcc on a GNU Linux) so
+        again we could jump into that source code and attempt to make sense of it all or we could simply try invoking main ourselves ignoring whatever safeties and features libc gives us. This way
+        we get to understand a bit of what is actually necessary to invoke main versus what's nice to have when invoking main. And hopefully it will help making the source code reading easier as
+        we will know roughly what the goal is of libc stuff before main.
+        <br><br>
+        NOTE: There is a third function, which technically lives in its own ELF section called _fini. This is a handler that is called when our program exits. _fini and how to properly exit with return
+        code are 2 components that are initialized in __libc_start_main.
+        <h1>lean mean ELF</h1>
+        There is a lot going on in this binary. A big chunk of it is the standard libc, so we can augment that pretty easy by passing -nostdlib to gcc telling it "hey i don't want it":
+        <pre>
+        <code>
+    $ gcc -nostdlib -o hello hello.c
+    /usr/bin/ld: warning: cannot find entry symbol _start; defaulting to 0000000000001030
+    /usr/bin/ld: /tmp/ccANS8XH.o: in function `main':
+    hello.c:(.text+0x1e): undefined reference to `puts'
+    collect2: error: ld returned 1 exit status
+        </code></pre>
+        Right. We are using printf() to output to our screen which is a libc function. But we're in luck, we can skip that entirely and go right to the direct way of doing it (losing formatters and such but we just want a simple string). This means however a direct jump into assembly since calls to things like puts() or write() are still stdlib wrappers. To access the syscall direct we must use assembly. Fortunately it is standardized and well documented.
+        <br><br>
+        One thing to note here is the lack of return statement. Since we are compiling without stdlib, that means we lose our _fini so the exit isn't defined anymore. 
+        <pre>
+        <code>
+    #define SYS_write 1
+    #define SYS_exit 60
+    
+    char hello[] = "hello, world\n";
+    
+    int main (int argc, char *argv[])
+    {
+    	/* the write wrapper looks something like this:
+    	 * int write(int fd, const char *buf, size_t len)
+    	 * and the syscall interface is like:
+    	 * syscall(int syscall_id, ...)
+    	 * with the parameters varying based on which syscall. In this case write is
+    	 * syscall3 meaning it has 3 parameters so it would appear:
+    	 * syscall(int syscall_id, int fd, const char *buf, size_t len)
+    	 */
+    	asm volatile (
+    		/* the asm instruction */
+    		"syscall"
+    		/* outputs we are ignoring for now so leave it empty */
+    		:
+    		/* inputs are syscall_id, fd, buf, and len */ 
+    		: "a"(SYS_write), "D"(1), "S"(hello), "d"(sizeof(hello))
+    		/* write is defined as clobbering these registers so lets put it here anyway */
+    		: "rcx", "r11", "memory"
+    	);
+    	/* we can't return! so we must call the exit syscall */
+    	asm volatile (
+    		"syscall"
+    		:
+    		/* inputs are syscall id and error code (0 for no errors) */
+    		: "a"(SYS_exit), "D"(0)
+    		: "memory"
+    	);
+    } 
+		</code></pre>
+        If we try our basic compilation without stdlib there is a linker warning:
+        <pre>
+        <code>
+    $ gcc -nostdlib -o hello hello.c
+    /usr/bin/ld: warning: cannot find entry symbol _start; defaulting to 0000000000001000
+        </code></pre>
+        Since there is no stdlib which has an entry point that eventually calls into main, we can set our main as the entry point:
+        <pre>
+        <code>
+    gcc -nostdlib -Wl,--entry=main -o hello hello.c
+        </code></pre>
+        Running this gives us our expected output! This is great, but why is the binary still large?
+        <pre>
+        <code>
+    $ wc -c hello
+    13848 hello
+        </code></pre>
+        <h1>leaner meaner ELF</h1>
+        Okay let's step right into assembly. The last C file we wrote was basically all assembly so we can trim out any of the C stuff entirely and create
+        a total asm file. I'll be using nasm to build this rather than gcc. Following the same idea (write syscall and exit syscall) our file is very straight-forward:
+        <pre>
+        <code>
+    ; ASM introduction with hello world but in 64-bit
+    section .text
+    global _start
+    
+    ;remember, these are 64-bit registers and the syscalls in linux are not mapped the same!
+    _start:
+        mov rdx, len    ;len: as you can imagine length of our string
+        mov rsi, msg    ;buf: address of our hello world string
+        mov rdi, 1      ;fd: 1 is stdout
+        mov rax, 1      ;in 64-bit land, sys_write is 1
+        syscall
+    
+        mov rdi, 0      ;we toss 0 in the error code param and assume all is well
+        mov rax, 60     ;60 is sys_exit
+        syscall
+    
+    section .data
+    
+    msg db 'hello, world',0xa   ;the lovely string appended with a LINE FEED (newline)
+    len equ $ - msg             ;funny way to easily calculate length of the string
+        </code></pre>
+        I threw in some inline comments to help out but this is very specific to 64-bit x86. If you are on 32-bit, your syscall numbers change (but you would
+        have figured that out when trying to compile the previous C with inline asm file).
+        But wait, there's no main! Much like the previous exercise we need to define the entry point and in this case why not just name our function the standard
+        _start entry point that ld linker expects. You could in theory name it whatever you want, and you'll see soon how to adjust accordingly. First, let's build
+        this asm file:
+        <pre>
+        <code>
+    nasm -f elf64 -o hello.o hello.asm
+    ld -s -o hello hello.o
+        </code></pre>
+        We have to do our assembler and linker phases manually since I'm no longer using gcc. Once you run those two commands you'll end up with a binary named hello
+        and the output to your screen should be the fine, wonderful "hello, world". But it is still big.
+        <pre>
+        <code>
+    $ wc -c hello
+    8488 hello
+        </code></pre>
+        At this point we have pretty much found our path to main. The missing piece you might say is "well how do I actually get there when I enter ./hello on the command line?". The answer to that is somewhat shell dependent (I know not a direct answer sorry) but in Linux your shell typically makes a syscall to execve() which you can peek at the man page. This syscall does some elf parsing and begins the stages we walked through above.
+        <br><br>
+        But this binary being the size it is gets to me. We wrote only a handful of assembly lines which when converted to binary opcodes should be even smaller. Where is the size coming from? ELF waste. Our built binary is pretty simple when it comes to ELF sections:
+        <pre>
+        <code>
+    $ readelf -S hello
+    There are 4 section headers, starting at offset 0x2028:
+    
+    Section Headers:
+      [Nr] Name              Type             Address           Offset
+           Size              EntSize          Flags  Link  Info  Align
+      [ 0]                   NULL             0000000000000000  00000000
+           0000000000000000  0000000000000000           0     0     0
+      [ 1] .text             PROGBITS         0000000000401000  00001000
+           0000000000000027  0000000000000000  AX       0     0     16
+      [ 2] .data             PROGBITS         0000000000402000  00002000
+           000000000000000d  0000000000000000  WA       0     0     4
+      [ 3] .shstrtab         STRTAB           0000000000000000  0000200d
+           0000000000000017  0000000000000000           0     0     1
+        </code></pre>
+        The assembly we wrote defined our two sections .text (which contains the executable code) and .data (which contains our string literal and length of the string) which we see here. However to get really in the weeds we can make a linker script that ld will run to generate a specific layout binary. With this we can potentially start to trim more off the size.
+        <pre>
+        <code>
+    OUTPUT_FORMAT("elf64-x86-64")
+    OUTPUT_ARCH(i386:x86-64)
+    ENTRY(_start)
+    SECTIONS {
+        .text 0x400000 : AT(0x400000)
+        {
+            *(.text*)
+        }
+        .data :
+        {
+            *(.data*)
+        }
+        /DISCARD/ : { *(.plt*) *(.iplt*) *(.rela*) *(.got*) *(.igot*) *(.shstrtab*) }
+    }
+        </code></pre>
+        Dump that into a hello.ld and we have a linker script. A swift overview:
+        <ul>
+            <li>OUTPUT_FORMAT("...") defines our output format which in this case is 64-bit x86 elf</li>
+            <li>OUTPUT_ARCH(...) similarly defines our target output architecture</li>
+            <li>ENTRY(_start) this is our entry point, if you named the function something else you could put whatever you wanted here. In this example our function is called _start</li>
+            <li>SECTIONS { ... } is the block defining our binary sections which there are just 2 we care about.</li>
+            <li>.text 0x400000 : AT(0x400000) marks our .text section, it is filled with anything tagged .text*, and at runtime our starting offset is 0x400000. Why that one? It is a commonly used one in 64 bit linux but you could in theory put anything you want, however be careful of alignment, architecture, etc.</li>
+            <li>.data is the data section containing our string literal and length as written in assembly above</li>
+            <li>/DISCARD/ tells the linker to get rid of any sections named like what is present in the list. We don't want them.</li>
+        </ul>
+        Now we can do a little extra when linking:
+        <pre>
+        <code>
+    ld -s -T hello.ld -Map=- -o hello hello.o
+        </code></pre>
+        You may be surprised by the sudden output to stdout here but this comes from the -Map option to the linker. This option tells ld to dump its linker map so we know what goes where, and -Map=- sends it to stdout rather than a file.
+        With that output we see text, data, the offsets, and what was discarded along with our output elf64. So what is our size now?
+        <pre>
+        <code>
+    $ wc -c hello
+    4432 hello
+        </code></pre>
+        It is getting smaller that's for sure. We started at 16K and now down to 4.4K, shrinking almost to 25% of the original size. But this still feels like too much. Can we trim even more? The answer to that now extends past our original question of getting to main and into hyper optimization of our ELF for the sake of shrinking it. Maybe it is a quest that helps understand getting to main and the minimum requirements.
+        <h1>why</h1>
+        For such a simple task of hello world, this is a lot to do. Compilers like gcc mask away the effort and have plenty of optimizations to get your program
+        built and running in no time. If anything this exercise helps close the gaps of the how, and it is unlikely you'll ever need to do all this effort yourself.
+        But if you end up in a position where you are doing bare-metal programming with no stdlib or wanting to write your own libc then hopefully you have an idea
+        of what kind of effort you're getting into. This low-level stuff is largely hidden away as it was written once from scratch and only occasionally updated for
+        modern architectures but it is still fun to learn and appreciate. There are some embedded practices here that are useful in academics or industry, and some ultra
+        high performance tricks which will use ELF hacking as well so this can also be the stepping stone into exploring those paths.
+        </p>
+		<p id="contact">
+		<hr>
+		e-mail: <a href="/cdn-cgi/l/email-protection#9ff2f6fcf7fefaf3fcf0feebfaecdfefedf0ebf0f1f2fef6f3b1fcf0f2"><span class="__cf_email__" data-cfemail="1d70747e757c78717e727c69786e5d6d6f72697273707c7471337e7270">[email&#160;protected]</span></a><br>
+		</p>
+	<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+    </body>
+</html>
