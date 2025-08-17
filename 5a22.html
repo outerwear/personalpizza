@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>making a wdc 65c816 emulator and evolving for ricoh 5a22</title>
+<style>
+pre {
+    border: 2px solid green;
+}
+</style>
+	</head>
+	<body style="font-family: monospace;background-color: #000000; color: #FFFFFF" link='green' vlink='green' alink='green'>
+		<p>
+		<a href="index.html">[home]</a>
+		<a href="index.html/#fun">[sandbox]</a>
+		<a href="#resume">[resume]</a>
+		<a href="#contact">[contact]</a>
+		</p>
+		<hr>
+        <p id="blog">
+        The Super Nintendo/Super Famicom is one of my all time favorite consoles. As a kid I spent countless
+        rainy day hours (the only time the family allowed video games) playing rented cartridges from the
+        local video rental store. However one particular game I permanently acquired: Super Mario World. Every
+        iteration of this game I get without hesitation be it the original, Japanese cartridge, and re-releases
+        on other consoles. Something about the design language, the user experience, the feeling of endless
+        secrets to discover, and always a nice challenge curve made it, for me, the perfect game.
+        <br>
+        <br>
+        A decade after I first played a SNES I entered university to study computer science. Like other
+        millenial compsci students the dream of making video games was a large inspiration to selecting the
+        major. But of course the 4 years had nothing to do with gaming, at least not directly. However my
+        coursework was always in the C programming language with the occasional bout in Scheme. One of
+        my professors proudly mentioned her former MIT classmates founded Naughty Dog and wrote games in Lisp
+        to make us more excited to use Scheme.
+        <br>
+        <br>
+        For years the idea of creating an emulator seemed fascinating but always out of reach. How cool to
+        imagine other hardware and languages running on my tiny netbook? As I grew older the idea stayed an
+        idea because honestly after a long day of software developer activities I wanted nothing more than
+        to avoid a computer altogether. Now suddenly I have a friend who shares a similar passion and one
+        weekend we thought "we write ultra-low latency, high performance trading systems in C so how hard
+        could an emulator be?"
+        <br>
+        <br>
+        Here's that journey.
+        <h1>What is an emulator?</h1>
+        At time of first writing this in 2025 I have about 12.5 years of industry experience working on a wide
+        breadth of products from custom microkernels on ARM architecture to Postgres database execution engine to
+        super high performance trading systems. Fortunately all in C with some exposure to assembly of both ARM
+        and Intel x86. While much of my coursework from degree is lost memories, refreshing isn't out of the
+        question. So I've in theory worked with a hypervisor and contributed to byte-code virtual machines. An
+        emulator can't be much different?
+        <br>
+        <br>
+        An emulator (in the context of this project) is simply software that enables your computer (host) to behave
+        like another computer (guest). For example an x86-64 machine running an emulation software to mimic a 16-bit
+        processor of yore. This could include a full operating system, or it could be tiny roms with single function
+        like make screen green.
+        <h1>WDC 65C816 and Ricoh 5A22</h1>
+        Nintendo chose as the CPU for the Super Nintendo a
+        <a href="https://www.westerndesigncenter.com/wdc/w65c816s-chip.php">WDC 65C816</a> 16-bit extension of the
+        ever popular (used in the NES) 6502 processor. This CPU comes from Western Design Center and was
+        created at request of Apple in 1983 although they wouldn't formally use it for 3 more years with the
+        Apple IIGS. Nintendo had a relationship with Ricoh and at some point in time Ricoh reached out to work
+        with WDC for their<a href="https://archive.computerhistory.org/resources/access/text/2015/06/102739969-05-01-acc.pdf"> exclusive chip</a>.
+        This 5A22 is a superset of the 65C816 containing some extra features.
+        <h1>writing an emulator</h1>
+        On a summer Sunday I sat with D and we wondered where to begin. Although we have worked together in a
+        business capacity implementing some, what I think, are very impressive technical pieces of software
+        this project starting from zero felt a bit daunting. I thought why not just get some super simple C
+        program up that reads an opcode and does a thing. It can be quick and dirty with a big ole switch statement/jump
+        table and we will handwrite a binary file that contains some opcodes. The design can be a struct of the
+        CPU registers for now and so our program will be:
+        <ol>
+            <li>enter main and allocate a cpuregister struct</li>
+            <li>open a binary file</li>
+            <li>loop: read 1 byte, enter jump table for that opcode, update register</li>
+            <li>close file when EOF</li>
+        </ol>
+        We are doing this in C on Linux 64-bit machines. Me on a laptop, D on his gaming PC. D with hints from
+        me wrote up that first pass and we implemented instruction INC: increment accumulator register. With a
+        silly binary file that contained a few 0x1A bytes we saw our little program open it and update that
+        register with the number of 0x1A bytes! This success was exciting and we came to the realization this
+        project idea isn't that scary. After some brief discussions about the first design we want to target
+        we had our idea: implement the full (or most necessary) opcodes in a way that is very easy to read but
+        modular so we can isolate the CPU functionality. This lets us design it almost like a library so that
+        each other hardware component we need to add isn't going into one giga-file of mess but instead we (in
+        theory) can swap in/out components we want like audio devices or graphics device. Because why stop at
+        the SNES when we could go and emulate an Apple IIGS? Or even make our own little microkernel for some
+        fun OS learning.
+        <h1>C is all I do, but..</h1>
+        After that first evening at D's place I went home and got hit with the thought of "what if this was also
+        an opportunity to try a language that isn't C for once?". I'm most comfortable in C. I could probably
+        whip this whole project up in a reasonable amount of time with my favorite language using all kinds of
+        optimization techniques as well. But my resume is deep C and not much else. The internet has me believing
+        memory safety is king of the industry nowadays so C is less common to find work (locally) so how about
+        that new kid everyone goes on about in silicon valley: r u s t.
+        <br>
+        <br>
+        Admittedly this wasn't my first crack at rust but it was my first time thinking about it in a couple years.
+        And before this my rust experience was ultra-limited to a partially implemented ELF reader utility. So I
+        stayed up very late wrestling the syntax, compiler errors, and "bad" C behaviors to get a really amateur
+        rust version of our initial creation completed. I texted D my frustration (rust isn't forgiving...) but
+        also that I was going to push it to our private repo for safekeeping and that I would probably maintain it
+        in parallel but no pressure to switch to rust. D tells me "let's do rust, I want to learn it too".
+        <h1>rust</h1>
+        Now we are committed to rust. After a long day of work we are excited to poke at this infamous language
+        and see if we can make something as clean and simple as we would in C. Many text messages, in-person chats,
+        and inline comments discussing the "why can't I do this in rust?!" or "there has to be a better way than
+        just pulling a random crate from the internet". But we're all in and not turning back. Each night a couple
+        new cpu instructions implemented. Those same nights, the code gets tighter and more concise as we become
+        more familiar with the syntax. I love C, it is so straight-forward. Rust is very difficult, but now I
+        can work more alongside it rather than against it.
+        <br>
+        <br>
+        However there are some things I won't get over. Like initializing a stack variable of any type to all zero
+        bytes. In C it is oh so easy:
+        <pre>
+        <code>
+    struct foo {
+        int x;
+        char y;
+        char z;
+    };
+
+    int main (int argc, char *argv[])
+    {
+        char array[10] = {0};
+        /* ... */
+    }
+        </code></pre>
+        In rust you ask? Oh there is no way. At least nothing as easy as just setting it equal to zero. You could
+        derive a default and define that to initialize to zero somehow but depending on the complexity of the
+        struct and in our case we had user-defined structs inside of structs (much like we would do in C) that
+        the compiler didn't like our attempts to short-cut zeroing out our stack allocated object. As mentioned
+        above our cpu registers were placed neatly in a struct but we also defined our memory system segmenting
+        the page, bank, and full memory concept into (what we thought) would be easy to access struct members. No.
+        <br>
+        <br>
+        You may be a seasoned rustacean who reads this and chuckles that it actually is easy. And you could be
+        totally right. I invite you to contact and show me how! I don't know if it is the onset of AI-slop or
+        what but internet searching was never providing consistent answers. Between the official rust book, the
+        rust for c programmers book, stack overflow, rust forums, and more there was always more than one way to
+        do it all claiming to be the "idiomatic way" along with warnings of potentially no longer being possible
+        due to rust version update. I guess this is the pains of working with a language in its infancy compared
+        to the more wise and veteran C. We press on.
+        </p>
+		<p id="contact">
+		<hr>
+		e-mail: <a href="/cdn-cgi/l/email-protection#9ff2f6fcf7fefaf3fcf0feebfaecdfefedf0ebf0f1f2fef6f3b1fcf0f2"><span class="__cf_email__" data-cfemail="1d70747e757c78717e727c69786e5d6d6f72697273707c7471337e7270">[email&#160;protected]</span></a><br>
+		</p>
+	<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+    </body>
+</html>
