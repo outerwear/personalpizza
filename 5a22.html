@@ -42,7 +42,7 @@ pre {
         <br>
         <br>
         Here's that journey.
-        <h1>What is an emulator?</h1>
+        <h1>what is an emulator?</h1>
         At time of first writing this in 2025 I have about 12.5 years of industry experience working on a wide
         breadth of products from custom microkernels on ARM architecture to Postgres database execution engine to
         super high performance trading systems. Fortunately all in C with some exposure to assembly of both ARM
@@ -124,7 +124,7 @@ pre {
 
     int main (int argc, char *argv[])
     {
-        char array[10] = {0};
+        struct foo myvar = {0};
         /* ... */
     }
         </code></pre>
@@ -143,6 +143,39 @@ pre {
         do it all claiming to be the "idiomatic way" along with warnings of potentially no longer being possible
         due to rust version update. I guess this is the pains of working with a language in its infancy compared
         to the more wise and veteran C. We press on.
+        <h1>changelog</h1>
+        <h2>20250815</h2>
+		<ul style="list-style-type: square;">
+            <li>D: implemented other decrement opcodes</li>
+            <li>D: added memory mode handling and cpu flag updates to DEC instructions</li>
+            <li>M: bit twiddling upgrades for the cpu flags</li>
+            <li>M: simplified the logging mechanism</li>
+            <li>M: PHX/PHY and PLX/PLY push/pull register-to-stack instructions implemented</li>
+        </ul>
+        <h2>20250814</h2>
+		<ul style="list-style-type: square;">
+            <li>D: fixed the build after M broke it. added memory/register defaults</li>
+            <li>M: logger mostly working but broke memory</li>
+            <li>M: logging now logs</li>
+            <li>D: load the whole rom at once and use program-counter to index (we miss mmap())</li>
+            <li>M: LDX load absolute index X register implemented</li>
+        </ul>
+        <h2>20250813</h2>
+		<ul style="list-style-type: square;">
+            <li>D: ported more of the original C into rust</li>
+            <li>M: updated rust code cpu register pretty print to not use mutable parameters</li>
+            <li>M: added the memory, page, and banks structs in rust</li>
+            <li>M: more work on memory and started a logger, it doesn't build. good luck</li>
+        </ul>
+        <h2>20250811</h2>
+		<ul style="list-style-type: square;">
+            <li>M: a rust version for giggles</li>
+            <li>M: read a whole file in rust 1 byte at a time</li>
+        </ul>
+        <h2>20250810</h2>
+		<ul style="list-style-type: square;">
+            <li>D: initial commit of the C code</li>
+        </ul>
         </p>
 		<p id="contact">
 		<hr>
