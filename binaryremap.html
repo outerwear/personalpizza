@@ -6,6 +6,9 @@
 pre {
     border: 2px solid green;
 }
+a {
+    text-decoration: none;
+}
 </style>
 	</head>
 	<body style="font-family: monospace;background-color: #000000; color: #FFFFFF" link='green' vlink='green' alink='green'>
@@ -21,7 +24,7 @@ pre {
         When performance tuning at scale, cache misses and table walks can be killer.
         A cache miss is when whatever memory you're accessing isn't readily available in your L1 cache, you "miss" and look to the next layer, and so on. Eventually hitting the dreaded DRAM and hopefully never making it to disk (swap).
         <br>
-        This <a href="https://cs.stackexchange.com/questions/102834/what-is-happening-during-table-walk">stackexchange</a> question/answer nicely
+        This <a href="https://cs.stackexchange.com/questions/102834/what-is-happening-during-table-walk">[stackexchange]</a> question/answer nicely
         explains what happens during a table walk. The tldr is that we need to translate between virtual and physical memory but it isn't a direct 1:1 mapping. In our program we may dereference a pointer to manipulate a value
         at some address but in reality that is a virtual address that must get translated to a physical address. Virtual memory is stored within pages which are typically 4096 bytes in size (standard 64-bit linux page size).
         When your memory access is not on the current page accessible, we must walk our table to find the page with the memory we want to access and then translate for the physical page which is a multi-level pointer chase. As
@@ -34,7 +37,7 @@ pre {
         <br>
         Sort of.
         <br>
-        In 64-bit Linux land depending on your kernel version you have access to what are called huge pages. A peek at the <a href="https://www.man7.org/linux/man-pages/man2/mmap.2.html">manual page for mmap</a> talks a bit about
+        In 64-bit Linux land depending on your kernel version you have access to what are called huge pages. A peek at the <a href="https://www.man7.org/linux/man-pages/man2/mmap.2.html">[manual page for mmap]</a> talks a bit about
         these huge pages with the MAP_HUGE_2MB and MAP_HUGE_1GB flags. First you'll need to see if your system supports it and what is configured exactly.
         <pre>
         <code>
@@ -57,13 +60,13 @@ pre {
     always [madvise] never
         </code></pre>
         This output shows 3 options and the one inside the square brackets is currently selected. In this case huge pages can be used (if they exist) when madvise notes to try. For the unfamiliar
-        <a href="https://www.man7.org/linux/man-pages/man2/madvise.2.html">madvise</a> is a system call to give advice to the kernel about the address range provided. One such advice is MADV_HUGEPAGE which enables transparent
+        <a href="https://www.man7.org/linux/man-pages/man2/madvise.2.html">[madvise]</a> is a system call to give advice to the kernel about the address range provided. One such advice is MADV_HUGEPAGE which enables transparent
         huge pages for the pages in the range specified. This means that as the kernel scans areas marked as huge page candidates it will attempt to allocate and replace them. Handy way of letting the kernel do the magic.
         <br>
         <br>
         The thing is there are no huge pages available to use on my system, so that madvise option isn't going to do anything. We could change that to [always] of course but still same problem. So lets tell the OS to have some
         huge pages. Before you do this make sure that you have the available memory, and calculate how many you will need. For this experiment I will make a single page but in a real environment you'll want many more. If you
-        get this value wrong or try to access huge pages that don't exist you can enter some unfortunate state in your application or even OS. <a href="https://oracle-base.com/articles/linux/configuring-huge-pages-for-oracle-on-linux-64">Oracle</a> has a very useful guide for this exact task but comes with the context of managing Oracle on Linux so I'll keep it brief and skip all that fluff.
+        get this value wrong or try to access huge pages that don't exist you can enter some unfortunate state in your application or even OS. <a href="https://oracle-base.com/articles/linux/configuring-huge-pages-for-oracle-on-linux-64">[Oracle]</a> has a very useful guide for this exact task but comes with the context of managing Oracle on Linux so I'll keep it brief and skip all that fluff.
         <pre>
         <code>
     # open /etc/sysctl.conf with your favorite editor (it is vim right?)
