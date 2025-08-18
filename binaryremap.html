@@ -94,6 +94,136 @@ pre {
         <br>
         <br>
         Searching the internet there are tools that will do the remapping for you. But where's the fun in that when we have already done the configuration manually?
+        <br>
+        To implement this ourselves I'm going to use GCC and I'm on a linux 64-bit system, which I am noting because I'm making use of specific GNU features that may or may not exist in other compiler toolchains. YMMV.
+        <br>
+        <br>
+        GCC has attributes which can be applied to functions as hints to the compiler/linker of extra features to perform. One such is constructor which inserts your function to be run before entering main (in the linker this would be in the ctor section).
+        The reason why this is important is that we will be shuffling around a loaded ELF binary text segment and we wouldn't want to move something only to completely hose ourselves and be stuck. Putting it in its own section is valid
+        but putting it to be run before main means we can be relieved of worry of anything running. For this exercise the function would look something like:
+        <pre>
+        <code>
+    extern unsigned char __executable_start[];
+    extern unsigned char __etext[];
+    void __attribute__((constructor)) __code_section_hugepage (void)
+    {
+        /* the meat */
+    }
+    </code></pre>
+        Hey wait what are those two external variables? These are hidden linker provided variables that give us the beginning and the end of our text (code) section. Well, etext is actually after fini but this is fine.
+        We need these to determine the locations of the start and end of our code! Now the strategy is:
+        <ol>
+        <li>Using those two addresses we can determine the size of the text</li>
+        <li>Allocate a new region of memory of that size (mmap, malloc, take your pick)</li>
+        <li>Move all data in the text section (start of __executable_start to end) into the new region</li>
+        <li>Re-map the original memory with mmap() given some special variables to ensure it ends up in the exact same place as well as with huge pages with correct permissions</li>
+        <li>Move from temp region to the new remapped region</li>
+        <li>Free the temp region</li>
+        </ol>
+        That's it! Pretty simple however there are plenty of gotchas along the way. So as I show the code I'll try to document. First of course is making sure you have enough huge pages available!
+        <pre>
+        <code>
+    #define HPINFO_FP           "/proc/sys/vm/nr_hugepages"
+    void __attribute__((constructor)) __code_section_hugepage (void)
+    {
+        uint64_t numhugepages;
+        ssize_t bytesread = 0;
+
+        /* open the huge page info file */
+        int fd = open(HPINFO_FP, O_RDONLY);
+        if (fd < 0)
+        {
+            ERROR("can't open %s", HPINFO_FP);
+            return;
+        }
+
+        /* its a raw ascii number up to 20 digits max */
+        bytesread = read(fd, data, 20);
+        if (bytesread < 0)
+        {
+            ERROR("unable to read %s.", HPINFO_FP);
+            exit(-1);
+        }
+
+        /* close the file we don't need it anymore */
+        if (close(fd) < 0)
+        {
+            ERROR("couldn't close %s.", HPINFO_FP);
+            exit(-1);
+        }
+
+        /* get the number of hugepages */
+        for (i = 0; i < (bytesread - 1); i++)
+        {
+            numhugepages = (numhugepages * 10) + data[i];
+        }
+    }
+        </code></pre>
+        Now assuming the number of pages is valid we continue with the step to make a temporary mapping and move it over. The size we calculated is textsz.
+        <pre>
+        <code>
+        /* make a temporary mapping */
+        tmpbuf = mmap(NULL, textsz,
+                      PROT_READ | PROT_WRITE,
+                      MAP_ANONYMOUS | MAP_PRIVATE,
+                      -1, 0);
+        if (MAP_FAILED == tmpbuf)
+        {
+            ERROR("mmap failed!");
+            return;
+        }
+
+        /* copy from old to temp */
+        memcpy(tmpbuf, __executable_start, textsz);
+        </code></pre>
+        If you aren't familiar with mmap() that is okay! The man page is available but it can be overwhelming. The important parts to know here is that it is a temporary region so all the parameters are very default.
+        NULL tells the OS give me any location for this region to exist. The size is next followed by protection bit flags. It must be read and write so that we can copy into the region (duh!) and then read to copy
+        back out. The map flags mean it is for just this process and finally the last two arguments are file descriptor (-1 means none) and offset (we start at the start). It is important to note mmap() doesn't return NULL
+        on failure but instead a special value so to check if it failed you must look for MAP_FAILED. And finally copy the original text size on over.
+        <br>
+        <br>
+        Wait! Doesn't all of this need to be page aligned and page size? Yes you are absolutely correct. Our text section should be page aligned but depending on your compiler of choice you may or may not by default get the final
+        memory page to yourself (meaning the next ELF section could be shared onto this page). You can force this in a linker script, which I will show further down.
+        <br>
+        <br>
+        The re-map can now begin. This is the magic we have been waiting for:
+        <pre>
+        <code>
+        /* re-map original map */
+        void *section = mmap(__executable_start, textsz,
+                       PROT_READ | PROT_WRITE,
+                       MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE | MAP_HUGETLB,
+                       -1, 0);
+        madvise(section, textsz, MADV_WILLNEED);
+
+        memcpy(section, tmpbuf, textsz);
+
+        mprotect(section, ssz, PROT_READ | PROT_EXEC);
+        </code></pre>
+        Starting with the mmap() you'll notice we still haven't marked it as executable yet but also there is 2 new flags: MAP_FIXED and MAP_HUGETLB. The first parameter is the address of our text section start and MAP_FIXED says to 
+        call mmap at that address specifically. This is how we "re-map" our original text section. The other flag is MAP_HUGETLB which if you are here I'm sure you can guess what this does: tells the OS to allocate huge pages. There
+        are more flags you can add to really amp up the performance guarantees like MAP_NORESERVE (do not use swap for this region) and MAP_POPULATE (pre-fault all the memory pages so you don't get latency hit on a page fault later).
+        Follow this up with an madvise() which gives advice to the OS what to do with some region of memory (given a starting address and size). In this case we put MADV_WILLNEED as a way to pre-fetch pages and mark them as we will
+        be using them soon. The next syscall is just like before but in reverse copying back to our original location. And finally we mark these pages as executable because it is code!
+        <br>
+        <br>
+        Now your program is running with huge pages for all of its code reducing i-tlg misses (ideally). If you can fit all of your application (or at least critical datapath) into 2MB then it will be in 1 page making for zero page
+        faults or tlb walks and depending on the chipset could even sit forever in L1 making for no cache misses period. You can even apply this strategy for your data as well especially in applications where all memory is allocated
+        on start-up, which is what you should be doing if in ultra high performance computing.
+        <h1>what's this about a linker script?</h1>
+       If you are just running gcc straight then it uses a default linker script which you can see with:
+       <pre>
+       <code>
+       ld --verbose
+       </code></pre>
+        In there you can see the etext mentioned above and a goofy syntax on how that variable is created. This linker script has a ton in it and you could prune to what you want or add what you want. One strategy is to create a
+        section strictly for the code/data you want to map in a special manner. In order to force page alignment the ALIGN(size) keyword can be used as well as pushing the current location forward to whatever is the next page size. This is seen in our default linker script with this line:
+        <pre>
+        <code>
+        . = ALIGN(CONSTANT (MAXPAGESIZE));
+        </code></pre>
+        Linker scripts feel like magic spells where the documentation leaves a lot to be desired. There are a number of resources online especially in the embedded world which helps de-mystify them a bit so I recommend checking
+        those out if you want to further optimize your ELF.
         </p>
 		<p id="contact">
 		<hr>
