@@ -120,17 +120,17 @@ a {
         bytes. In C it is oh so easy:
         <pre>
         <code>
-    struct foo {
-        int x;
-        char y;
-        char z;
-    };
-
-    int main (int argc, char *argv[])
-    {
-        struct foo myvar = {0};
-        /* ... */
-    }
+ struct foo {
+     int x;
+     char y;
+     char z;
+ };
+ 
+ int main (int argc, char *argv[])
+ {
+     struct foo myvar = {0};
+     /* ... */
+ }
         </code></pre>
         In rust you ask? Oh there is no way. At least nothing as easy as just setting it equal to zero. You could
         derive a default and define that to initialize to zero somehow but depending on the complexity of the

@@ -42,23 +42,23 @@ a {
         these huge pages with the MAP_HUGE_2MB and MAP_HUGE_1GB flags. First you'll need to see if your system supports it and what is configured exactly.
         <pre>
         <code>
-    $ grep -i huge /proc/meminfo
-    AnonHugePages:         0 kB
-    ShmemHugePages:        0 kB
-    FileHugePages:         0 kB
-    HugePages_Total:       0
-    HugePages_Free:        0
-    HugePages_Rsvd:        0
-    HugePages_Surp:        0
-    Hugepagesize:       2048 kB
-    Hugetlb:               0 kB
+ $ grep -i huge /proc/meminfo
+ AnonHugePages:         0 kB
+ ShmemHugePages:        0 kB
+ FileHugePages:         0 kB
+ HugePages_Total:       0
+ HugePages_Free:        0
+ HugePages_Rsvd:        0
+ HugePages_Surp:        0
+ Hugepagesize:       2048 kB
+ Hugetlb:               0 kB
         </code></pre>
         Nice so my system has huge pages configured to 2MB (2048kB) but it isn't using any at all. On a desktop machine this makes sense, usually server variants of an OS will have them default configured. To see if they are
         enabled:
         <pre>
         <code>
-    $ cat /sys/kernel/mm/transparent_hugepage/enabled
-    always [madvise] never
+ $ cat /sys/kernel/mm/transparent_hugepage/enabled
+ always [madvise] never
         </code></pre>
         This output shows 3 options and the one inside the square brackets is currently selected. In this case huge pages can be used (if they exist) when madvise notes to try. For the unfamiliar
         <a href="https://www.man7.org/linux/man-pages/man2/madvise.2.html">[madvise]</a> is a system call to give advice to the kernel about the address range provided. One such advice is MADV_HUGEPAGE which enables transparent
@@ -70,24 +70,24 @@ a {
         get this value wrong or try to access huge pages that don't exist you can enter some unfortunate state in your application or even OS. <a href="https://oracle-base.com/articles/linux/configuring-huge-pages-for-oracle-on-linux-64">[Oracle]</a> has a very useful guide for this exact task but comes with the context of managing Oracle on Linux so I'll keep it brief and skip all that fluff.
         <pre>
         <code>
-    # open /etc/sysctl.conf with your favorite editor (it is vim right?)
-    # update or add this line for a single huge page
-    vm.nr_hugepages=1
-    # save and exit then run the following command to refresh this system config
-    sysctl -p
+ # open /etc/sysctl.conf with your favorite editor (it is vim right?)
+ # update or add this line for a single huge page
+ vm.nr_hugepages=1
+ # save and exit then run the following command to refresh this system config
+ sysctl -p
         </code></pre>
         We have now configured our machine to have a whopping 1 huge page (2MB in size). We can verify by checking out meminfo again:
         <pre>
         <code>
-    $ grep -i hugepages /proc/meminfo 
-    AnonHugePages:         0 kB
-    ShmemHugePages:        0 kB
-    FileHugePages:         0 kB
-    HugePages_Total:       1
-    HugePages_Free:        1
-    HugePages_Rsvd:        0
-    HugePages_Surp:        0
-    Hugepagesize:       2048 kB
+ $ grep -i hugepages /proc/meminfo 
+ AnonHugePages:         0 kB
+ ShmemHugePages:        0 kB
+ FileHugePages:         0 kB
+ HugePages_Total:       1
+ HugePages_Free:        1
+ HugePages_Rsvd:        0
+ HugePages_Surp:        0
+ Hugepagesize:       2048 kB
         </code></pre>
         Voila. There it is. Let's use it!
         <h1>remap running code</h1>
@@ -107,12 +107,12 @@ a {
         but putting it to be run before main means we can be relieved of worry of anything running. For this exercise the function would look something like:
         <pre>
         <code>
-    extern unsigned char __executable_start[];
-    extern unsigned char __etext[];
-    void __attribute__((constructor)) __code_section_hugepage (void)
-    {
-        /* the meat */
-    }
+ extern unsigned char __executable_start[];
+ extern unsigned char __etext[];
+ void __attribute__((constructor)) __code_section_hugepage (void)
+ {
+     /* the meat */
+ }
     </code></pre>
         Hey wait what are those two external variables? These are hidden linker provided variables that give us the beginning and the end of our text (code) section. Well, etext is actually after fini but this is fine.
         We need these to determine the locations of the start and end of our code! Now the strategy is:
@@ -127,58 +127,58 @@ a {
         That's it! Pretty simple however there are plenty of gotchas along the way. So as I show the code I'll try to document. First of course is making sure you have enough huge pages available!
         <pre>
         <code>
-    #define HPINFO_FP           "/proc/sys/vm/nr_hugepages"
-    void __attribute__((constructor)) __code_section_hugepage (void)
-    {
-        uint64_t numhugepages;
-        ssize_t bytesread = 0;
-
-        /* open the huge page info file */
-        int fd = open(HPINFO_FP, O_RDONLY);
-        if (fd < 0)
-        {
-            ERROR("can't open %s", HPINFO_FP);
-            return;
-        }
-
-        /* its a raw ascii number up to 20 digits max */
-        bytesread = read(fd, data, 20);
-        if (bytesread < 0)
-        {
-            ERROR("unable to read %s.", HPINFO_FP);
-            exit(-1);
-        }
-
-        /* close the file we don't need it anymore */
-        if (close(fd) < 0)
-        {
-            ERROR("couldn't close %s.", HPINFO_FP);
-            exit(-1);
-        }
-
-        /* get the number of hugepages */
-        for (i = 0; i < (bytesread - 1); i++)
-        {
-            numhugepages = (numhugepages * 10) + data[i];
-        }
-    }
+ #define HPINFO_FP           "/proc/sys/vm/nr_hugepages"
+ void __attribute__((constructor)) __code_section_hugepage (void)
+ {
+     uint64_t numhugepages;
+     ssize_t bytesread = 0;
+ 
+     /* open the huge page info file */
+     int fd = open(HPINFO_FP, O_RDONLY);
+     if (fd < 0)
+     {
+         ERROR("can't open %s", HPINFO_FP);
+         return;
+     }
+ 
+     /* its a raw ascii number up to 20 digits max */
+     bytesread = read(fd, data, 20);
+     if (bytesread < 0)
+     {
+         ERROR("unable to read %s.", HPINFO_FP);
+         exit(-1);
+     }
+ 
+     /* close the file we don't need it anymore */
+     if (close(fd) < 0)
+     {
+         ERROR("couldn't close %s.", HPINFO_FP);
+         exit(-1);
+     }
+ 
+     /* get the number of hugepages */
+     for (i = 0; i < (bytesread - 1); i++)
+     {
+         numhugepages = (numhugepages * 10) + data[i];
+     }
+ }
         </code></pre>
         Now assuming the number of pages is valid we continue with the step to make a temporary mapping and move it over. The size we calculated is textsz.
         <pre>
         <code>
-        /* make a temporary mapping */
-        tmpbuf = mmap(NULL, textsz,
-                      PROT_READ | PROT_WRITE,
-                      MAP_ANONYMOUS | MAP_PRIVATE,
-                      -1, 0);
-        if (MAP_FAILED == tmpbuf)
-        {
-            ERROR("mmap failed!");
-            return;
-        }
-
-        /* copy from old to temp */
-        memcpy(tmpbuf, __executable_start, textsz);
+ /* make a temporary mapping */
+ tmpbuf = mmap(NULL, textsz,
+               PROT_READ | PROT_WRITE,
+               MAP_ANONYMOUS | MAP_PRIVATE,
+               -1, 0);
+ if (MAP_FAILED == tmpbuf)
+ {
+     ERROR("mmap failed!");
+     return;
+ }
+ 
+ /* copy from old to temp */
+ memcpy(tmpbuf, __executable_start, textsz);
         </code></pre>
         If you aren't familiar with mmap() that is okay! The man page is available but it can be overwhelming. The important parts to know here is that it is a temporary region so all the parameters are very default.
         NULL tells the OS give me any location for this region to exist. The size is next followed by protection bit flags. It must be read and write so that we can copy into the region (duh!) and then read to copy
@@ -193,16 +193,16 @@ a {
         The re-map can now begin. This is the magic we have been waiting for:
         <pre>
         <code>
-        /* re-map original map */
-        void *section = mmap(__executable_start, textsz,
-                       PROT_READ | PROT_WRITE,
-                       MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE | MAP_HUGETLB,
-                       -1, 0);
-        madvise(section, textsz, MADV_WILLNEED);
-
-        memcpy(section, tmpbuf, textsz);
-
-        mprotect(section, ssz, PROT_READ | PROT_EXEC);
+ /* re-map original map */
+ void *section = mmap(__executable_start, textsz,
+                PROT_READ | PROT_WRITE,
+                MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE | MAP_HUGETLB,
+                -1, 0);
+ madvise(section, textsz, MADV_WILLNEED);
+ 
+ memcpy(section, tmpbuf, textsz);
+ 
+ mprotect(section, ssz, PROT_READ | PROT_EXEC);
         </code></pre>
         Starting with the mmap() you'll notice we still haven't marked it as executable yet but also there is 2 new flags: MAP_FIXED and MAP_HUGETLB. The first parameter is the address of our text section start and MAP_FIXED says to 
         call mmap at that address specifically. This is how we "re-map" our original text section. The other flag is MAP_HUGETLB which if you are here I'm sure you can guess what this does: tells the OS to allocate huge pages. There
@@ -218,13 +218,13 @@ a {
        If you are just running gcc straight then it uses a default linker script which you can see with:
        <pre>
        <code>
-       ld --verbose
+ ld --verbose
        </code></pre>
         In there you can see the etext mentioned above and a goofy syntax on how that variable is created. This linker script has a ton in it and you could prune to what you want or add what you want. One strategy is to create a
         section strictly for the code/data you want to map in a special manner. In order to force page alignment the ALIGN(size) keyword can be used as well as pushing the current location forward to whatever is the next page size. This is seen in our default linker script with this line:
         <pre>
         <code>
-        . = ALIGN(CONSTANT (MAXPAGESIZE));
+ . = ALIGN(CONSTANT (MAXPAGESIZE));
         </code></pre>
         Linker scripts feel like magic spells where the documentation leaves a lot to be desired. There are a number of resources online especially in the embedded world which helps de-mystify them a bit so I recommend checking
         those out if you want to further optimize your ELF.
